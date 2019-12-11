@@ -1,0 +1,17 @@
+sap.ui.define([
+	"{{formatNamespace fullyQualifiedProjectName}}/controller/BaseController"
+], function (BaseController) {
+	"use strict";
+
+	return BaseController.extend("{{basicSAPUI5ApplicationProject.parameters.namespace.value}}.{{projectName}}.controller.NotFound", {
+
+		/**
+		 * Navigates to the list when the link is pressed
+		 * @public
+		 */
+		onLinkPressed : function () {
+			this.getRouter().navTo("list");
+		}
+
+	});
+});

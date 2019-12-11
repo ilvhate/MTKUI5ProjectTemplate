@@ -1,0 +1,25 @@
+sap.ui.define([
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/Device"
+], function (JSONModel, Device) {
+	"use strict";
+
+	return {
+
+		createDeviceModel: function () {
+			var oModel = new JSONModel(Device);
+			oModel.setDefaultBindingMode("OneWay");
+			return oModel;
+		},
+		
+		createEventModel: function () {
+			var oModel = new JSONModel({
+				 ChannelId : "MTK_CHANNEL", 
+				 EventId   : "TICKET_RETURNED"
+				});
+			oModel.setDefaultBindingMode("OneWay");
+			return oModel;
+		}
+
+	};
+});

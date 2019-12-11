@@ -1,0 +1,47 @@
+{
+    "name": "mtkui5projecttemplate_plugin",
+    "description": "MTK UI5 Project Template Plugin",
+    "i18n": "mtkui5projecttemplate_plugin/i18n/i18n",
+    "requires": {
+        "services": [
+            "template",
+            "templateCustomizationStep",
+			"filesystem.documentProvider",
+            "projectType",
+            "setting.project"         
+        ]
+    },
+    "provides": {
+        "services": {},
+        "interfaces": {}
+    },
+    "configures": {
+        "services": {
+            "template:templates": [
+                {
+                    "id": "MTKUI5ProjectTemplate.mtkui5projecttemplate",
+                    "template": "mtkui5projecttemplate_plugin/mtkui5projecttemplate/mtkui5projecttemplate",
+                    "name": "{i18n>Config_template_mtkui5projecttemplate_name}",
+                    "description": "{i18n>Config_template_mtkui5projecttemplate_desc}",
+                    "path": "mtkui5projecttemplate_plugin/mtkui5projecttemplate",
+                    "icon": "sap-icon://detail-view",
+                    "internalOnly": false,
+                    "category": "Common",
+                    "wizardSteps": [
+                        "templateCustomizationStep"
+                    ],
+                    "templateType": "project",
+                    "requiresNeoApp": true,
+                    "version": "1.0.0",
+                    "orderPriority": 1000,
+                                                    
+                    "modelRoot": "basicSAPUI5ApplicationProject",
+                    "modelFileName": "model.json",
+                    "fileName": "resources.zip",
+                    "previewImage": "image/SAPUI5-preview.png"
+                }
+            ]
+        }
+    },
+    "subscribes": {}
+}

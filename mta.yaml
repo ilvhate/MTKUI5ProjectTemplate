@@ -1,0 +1,33 @@
+_schema-version: "2.0.0"
+ID: mtkui5projecttemplate_extension
+version: 0.0.1
+parameters:
+  hcp-deployer-version: "1.1.0"
+  
+modules:
+  - name: MTKUI5ProjectTemplate
+    type: com.sap.hcp.html5
+    path: public
+    parameters:
+      name: mtkui5projecttemplate
+      version: "0.0.1"
+    provides:
+      - name: MTKUI5ProjectTemplate
+        public: true
+    build-parameters:
+      builder: npm
+      ignore: [".che/", ".npmrc"]
+      timeout: 15m
+      requires:
+        - name: MTKUI5ProjectTemplate-client
+          artifacts: ["dist/*"]
+          target-path: "client"
+  - name: MTKUI5ProjectTemplate-client
+    type: com.sap.hcp.html5
+    path: client
+    build-parameters:
+      builder: npm
+      timeout: 15m
+      supported-platforms: []
+      npm-opts:
+        execute: "install"

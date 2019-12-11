@@ -1,0 +1,87 @@
+sap.ui.define([
+	"{{formatNamespace fullyQualifiedProjectName}}/controller/BaseController",
+	"sap/ui/model/json/JSONModel",
+	"{{formatNamespace fullyQualifiedProjectName}}/Component"
+], function (BaseController, JSONModel, Component) {
+	"use strict";
+
+	return BaseController.extend("{{basicSAPUI5ApplicationProject.parameters.namespace.value}}.{{projectName}}.controller.App", {
+		onInit: function () {
+			
+			var _this = this;
+			// get current user cookie from EPortal
+			var epDomain = Component.getMetadata().getManifestEntry("sap.app").dataSources["epDomain"].uri;
+			var url = epDomain + "/wdacaller/fetch_ticket.jsp";
+			// resolve launchpad CORS issue [request header : x-xhr-logon not allow]; override XMLHTTPRequest.send 
+			this._overrideRequestPrototype();
+			// get JSON via jQuery ajax function instead of XMLHttpRequest(but jQuery won't support IE8 & IE9)
+			$.ajax({
+					url: url,
+					xhrFields: {
+						withCredentials: true
+					},
+					dataType: "JSON"
+				})
+				.done(function (data) {
+					//console.log("Sucess get ajax request-->" + JSON.stringify(data));
+					//sap.base.Log.info("Sucess get ajax request-->" + JSON.stringify(data));
+					_this.getOwnerComponent().setTicketModel(new JSONModel(data));
+					// publish an ticket return event to notify list controller
+					_this.getOwnerComponent().getEventBus().publish(
+								_this.getOwnerComponent().getChannelId(),
+								_this.getOwnerComponent().getEventId(),
+								"");
+				})
+				.fail(function (jqXHR, textStatus) {
+					console.log("fail get ajax request-->" + textStatus);
+				});
+			// restore XMLHTTPRequest.send method
+			this._restoreRequestPrototype();
+			
+			// apply content density mode to root view
+			this.getView().addStyleClass(this.getOwnerComponent().getContentDensityClass());
+		},
+		
+		onBeforeRendering: function(){
+			
+		},
+		onAfterRendering: function(){
+			
+		},
+		
+		onExit: function(){
+		
+		},
+		_overrideRequestPrototype: function () {
+			if (!XMLHttpRequest._SAP_ENHANCED) {
+				return;
+			}
+			this.__send = XMLHttpRequest.prototype.send;
+			XMLHttpRequest.prototype.send = function (oBody) {
+				let oChannel = {};
+				this._checkEventSubscriptions();
+				try {
+					oChannel = this._channel;
+					this._saveParams(oBody);
+					this._send(oBody);
+					if (oChannel) {
+						oChannel.sent();
+					}
+				} catch (oError) {
+					if (oChannel) {
+						oChannel["catch"](oError);
+					} else {
+						throw oError;
+					}
+				}
+			};
+		},
+		
+		_restoreRequestPrototype: function () {
+			if (!XMLHttpRequest._SAP_ENHANCED) {
+				return;
+			}
+			XMLHttpRequest.prototype.send = this.__send;
+		}
+	});
+});

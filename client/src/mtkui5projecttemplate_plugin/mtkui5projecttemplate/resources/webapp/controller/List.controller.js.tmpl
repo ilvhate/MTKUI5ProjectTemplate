@@ -1,0 +1,216 @@
+sap.ui.define([
+	"{{formatNamespace fullyQualifiedProjectName}}/controller/BaseController",
+	"sap/ui/model/odata/v2/ODataModel",	
+	"sap/ui/model/json/JSONModel",
+	"{{formatNamespace fullyQualifiedProjectName}}/model/formatter",
+	"sap/ui/model/Filter",
+	"sap/ui/export/Spreadsheet"
+], function (BaseController, ODataModel, JSONModel, formatter, Filter, Spreadsheet) {
+	"use strict";
+
+	return BaseController.extend("{{basicSAPUI5ApplicationProject.parameters.namespace.value}}.{{projectName}}.controller.{{basicSAPUI5ApplicationProject.parameters.name1.value}}", {
+		
+		formatter: formatter,
+		
+		/* =========================================================== */
+		/* lifecycle methods                                           */
+		/* =========================================================== */
+
+		/**
+		 * Called when the list controller is instantiated.
+		 * @public
+		 */
+		onInit: function () {
+		
+			var oTicket = this.getOwnerComponent().getTicketModel();
+			// check if ticket is ready
+			if ( oTicket ){
+				this.onTicketReturned();
+			} else {
+				// subscribe an ticket return event to get sap ticket & initialize table
+				this.getOwnerComponent().getEventBus().subscribeOnce(
+					this.getOwnerComponent().getChannelId(),
+					this.getOwnerComponent().getEventId(),
+					this.onTicketReturned,
+					this);
+			}
+		},
+		/**
+		 *  After SAP Ticket is ready, render table
+		 * 
+		 */
+		onTicketReturned: function(){
+			//get metadata label in English
+			var oModel = new ODataModel("/sap/opu/odata/sap/ZHCM_PA_TRAVELINFORMATION_SRV", {
+				metadataUrlParams: {
+					"sap-language": "en"
+				},
+				defaultBindingMode: "OneWay"
+			});
+			// set MYSAPSSO2 ticket
+			oModel.setHeaders(this.getOwnerComponent().getTicketModel().getData());
+			var oTable = this.getTable();
+			this.oBusyIndicator = oTable.getNoData();
+			oTable.setModel(oModel);
+			// Set operationMode = Client to enable sorting & filtering in Client Side
+			oTable.bindRows({
+				path: "/TravelInformationSet",
+				parameters: {
+					"operationMode": "Client"
+				}
+			});
+			this.initBindingEventHandler();
+			this.getTable().attachCellClick(this.onCellClick.bind(this));
+		},
+		
+		onBeforeRendering: function(){
+		},
+		
+		onAfterRendering: function(){
+		},
+		
+		onCellClick: function(oEvent){
+			//console.log(oEvent.getParameter("cellControl").getParent());
+		},
+		/**
+		 * get table  
+		 */
+		getTable: function () {
+			return this.byId("table");
+		},
+		
+		/**
+		 * Event handler for refresh event. Keeps filter, sort
+		 * and group settings and refreshes the list binding.
+		 * @public
+		 */
+		onRefresh : function () {
+			var oTable = this.getTable();
+			oTable.getBinding().refresh(true);
+		},
+		
+		initBindingEventHandler: function () {
+			var oBusyIndicator = this.oBusyIndicator;
+			var oTable = this.getTable();
+			var oBinding = oTable.getBinding("rows");
+
+			oBinding.attachDataRequested(function () {
+				oTable.setNoData(oBusyIndicator);
+			});
+			oBinding.attachDataReceived(function () {
+				oTable.setNoData(null); //Use default again ("No Data" in case no data is available)
+			});
+		},
+		
+		onExit: function () {
+			this.oBusyIndicator.destroy();
+			this.oBusyIndicator = null;
+		},
+		
+		/**
+		 *  Excel Export function
+		 */
+		onExcelExport: function () {
+			var aCols, oRowBinding, oSettings, oTable;
+			oTable = this.getTable();
+			oRowBinding = oTable.getBinding("rows"); //this is important! bindingInfo
+			var aContexts = oRowBinding.getContexts();
+			// collect Client Side JSON Data for Export
+			var aJsonData = [];
+			for (var j = 0; j < aContexts.length; j++) {
+				aJsonData.push(aContexts[j].getObject());
+			}
+			aCols = this.createColumnConfig();
+
+			//var oModel = oTable.getModel();
+			//var oModelInterface = oModel.getInterface();
+
+			oSettings = {
+				workbook: {
+					columns: aCols
+				},
+				dataSource: 
+					// option 1. assign JSON data for export
+					aJsonData 
+					// option 2. call OData Service to get data for export
+				/* { 
+					type: "oData",
+					dataUrl: oRowBinding.getDownloadUrl ? oRowBinding.getDownloadUrl() : null,
+					serviceUrl: oModelInterface.sServiceUrl,
+					headers: oModelInterface.getHeaders ? oModelInterface.getHeaders() : null,
+					count: oRowBinding.getLength ? oRowBinding.getLength() : null,
+					useBatch: oModelInterface.bUseBatch,
+					sizeLimit: oModelInterface.iSizeLimit
+				} */
+				,
+				worker: true,
+				fileName: "Export.xlsx"
+			};
+
+			new Spreadsheet(oSettings).build();
+		},
+		
+		createColumnConfig: function () {
+			var aCols = [];
+			var oResource = this.getResourceBundle();
+			aCols.push({
+				label: oResource.getText("countryName"),
+				property: "CountryName",
+				type: "string"
+			});
+			
+			aCols.push({
+				label: oResource.getText("departureDate"),
+				property: "StartDate",
+				type: "date",
+				format: "yyyy/mm/dd"
+			});
+			
+			aCols.push({
+				label: oResource.getText("returnDate"),
+				property: "EndDate",
+				type: "date",
+				format: "yyyy/mm/dd"
+			});
+
+			/*			aCols.push({
+							label: 'Full name',
+							property: ['Lastname', 'Firstname'],
+							type: 'string',
+							template: '{0}, {1}'
+						});
+
+						aCols.push({
+							property: 'Salary',
+							type: 'number',
+							scale: 2,
+							delimiter: true
+						});*/
+
+			/*			aCols.push({
+							property: 'Active',
+							type: 'boolean',
+							trueValue: 'YES',
+							falseValue: 'NO'
+						});
+			*/
+			return aCols;
+		},
+		
+		/*
+		 *  navigate to detail page (with data)
+		 */ 
+		showDetail: function(oEvent){
+			var oRow = oEvent.getParameter("row");
+			//var oItem = oEvent.getParameter("item");
+			// data pass to detail view should not contain '/', so encode string before transfer
+			this.getRouter().navTo("detail", {
+				objectId: encodeURIComponent(oRow.getBindingContext().getPath()),
+				countryName: oRow.getBindingContext().getProperty("CountryName"),
+				city: oRow.getBindingContext().getProperty("City"),
+				departureDate: encodeURIComponent(oRow.getBindingContext().getProperty("DepartureDate")),
+				returnDate: encodeURIComponent(oRow.getBindingContext().getProperty("ReturnDate"))
+			});
+		}
+	});
+});

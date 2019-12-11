@@ -1,0 +1,29 @@
+{
+	"name": "mtkui5projecttemplate_extension",
+	"title": "mtkui5projecttemplate_extension",
+	"version": "0.0.1",
+	"description": "MTK UI5 Project Template Extension",
+	"homepage": "http://wiki.mediatek.inc/display/ITERP/Create+SAP+WEBIDE+Extension+for+MTK+UI5+Project+Template",
+	"author": "MTK80314",
+	"scripts": {
+		"postinstall": "node ./scripts/bundle.js && npm run lint",
+		"lint": "node ./node_modules/eslint/bin/eslint . --ext=.js,.json"
+	},
+	"devDependencies": {
+		"@sap-webide/webide-client-tools": "^2.2.0",
+		"eslint": "4.12.1",
+		"@sap/eslint-plugin-webide-feature": "1.3.22"
+	},
+	"bundledPlugins": {
+		"mtkui5projecttemplate_plugin": "file:src/mtkui5projecttemplate_plugin"
+	},
+	"webidePreloads": {
+		"js": [
+			"config-preload.js",
+			"i18n/config-preload.js"
+		],
+		"config": [
+			"config-preload.json"
+		]
+	}
+}
